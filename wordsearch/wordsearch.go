@@ -9,7 +9,7 @@ import (
 
 type ResultEntry struct {
 	Entry searchgrids.Entry
-	Score int
+	Score uint16
 }
 
 type ResultEntries []ResultEntry
@@ -151,22 +151,22 @@ func sortKanjiResults(table env.Environment, raw_results searchgrids.EntryList, 
 	return results
 }
 
-func calculateEngScore(table env.Environment, entry searchgrids.Entry, query string) int {
-	var score int
-	var best int
-	var content_length int
+func calculateEngScore(table env.Environment, entry searchgrids.Entry, query string) uint16 {
+	var score uint16
+	var best uint16
+	var content_length uint16
 
-	query_length := len(query)
+	query_length := uint16(len(query))
 	for i, hash := range entry.Hash {
 		score = 0
 		content := hash % 100
 		score += 2 - content
 		hash /= 100
-		gloss := hash % 100
+		gloss := hash % 20
 		score -= 2 * (gloss - 1)
-		hash /= 100
+		hash /= 20
 		score -= (hash - 1)
-		content_length = len(table.Dict.Entries[entry.WordID].Sense[hash-1].Glossary[gloss-1].Content)
+		content_length = uint16(len(table.Dict.Entries[entry.WordID].Sense[hash-1].Glossary[gloss-1].Content))
 		score += 10 - (content_length-query_length)*(content+1)
 		if i == 0 {
 			best = score
@@ -178,9 +178,9 @@ func calculateEngScore(table env.Environment, entry searchgrids.Entry, query str
 	return best
 }
 
-func calculateKanaScore(table env.Environment, entry searchgrids.Entry, query string) int {
-	var score int
-	var best int
+func calculateKanaScore(table env.Environment, entry searchgrids.Entry, query string) uint16 {
+	var score uint16
+	var best uint16
 	var reading_length int
 
 	query_length := len(query)
@@ -188,7 +188,7 @@ func calculateKanaScore(table env.Environment, entry searchgrids.Entry, query st
 		score = 0
 		score += 3 - index
 		reading_length = len(table.Dict.Entries[entry.WordID].Readings[index].Reading)
-		score *= 10 - (reading_length - query_length)
+		score *= uint16(10 - (reading_length - query_length))
 		if i == 0 {
 			best = score
 		} else if score > best {
@@ -199,9 +199,9 @@ func calculateKanaScore(table env.Environment, entry searchgrids.Entry, query st
 	return best
 }
 
-func calculateKanjiScore(table env.Environment, entry searchgrids.Entry, query string) int {
-	var score int
-	var best int
+func calculateKanjiScore(table env.Environment, entry searchgrids.Entry, query string) uint16 {
+	var score uint16
+	var best uint16
 	var kanji_length int
 
 	query_length := len(query)
@@ -209,7 +209,7 @@ func calculateKanjiScore(table env.Environment, entry searchgrids.Entry, query s
 		score = 0
 		score += 3 - index
 		kanji_length = len(table.Dict.Entries[entry.WordID].Kanji[index].Expression)
-		score *= 10 - (kanji_length - query_length)
+		score *= uint16(10 - (kanji_length - query_length))
 		if i == 0 {
 			best = score
 		} else if score > best {
@@ -329,7 +329,7 @@ func matchInLists(wordID int, list searchgrids.EntryList) (match bool, index int
 	return false, midpoint
 }
 
-func matchHashFirstWord(Hash searchgrids.Hash, hash int) bool {
+func matchHashFirstWord(Hash searchgrids.Hash, hash uint16) bool {
 	if Hash == nil {
 		return false
 	}
@@ -349,7 +349,7 @@ func matchHashFirstWord(Hash searchgrids.Hash, hash int) bool {
 	return false
 }
 
-func matchHash(Hash searchgrids.Hash, hash int) bool {
+func matchHash(Hash searchgrids.Hash, hash uint16) bool {
 	if Hash == nil {
 		return false
 	}

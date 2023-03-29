@@ -43,11 +43,11 @@ type EntryList []Entry
 
 type Entry struct {
 	WordID int
+	Score  uint16
 	Hash   Hash
-	Score  int
 }
 
-type Hash []int
+type Hash []uint16
 
 func GenerateAlphabets(dict jmdict.Jmdict) (*EngAlphabet, *KanaAlphabet, *KanjiAlphabet) {
 	var engAlphabet EngAlphabet
@@ -83,25 +83,25 @@ func fillKanji(alphabet *KanjiAlphabet) {
 	}
 }
 
-func scoreEntry(entry jmdict.JmdictEntry) int {
+func scoreEntry(entry jmdict.JmdictEntry) uint16 {
 	score := checkKanji(entry.Kanji) + checkContent(entry) + checkReadings(entry)
 	score += 500
 	return score
 }
 
-func checkKanji(kanji []jmdict.JmdictKanji) int {
-	var score int
+func checkKanji(kanji []jmdict.JmdictKanji) uint16 {
+	var score uint16
 	length := len(kanji)
 	if length != 0 {
-		score += length * 10
+		score += uint16(length) * 10
 		for i := 0; i < length; i++ {
-			score = score + (length-i)*(kanjiFirst(kanji[i])-limitedKanji(kanji[i])+kanjiPriority(kanji[i]))
+			score = score + (uint16(length-i))*(kanjiFirst(kanji[i])-limitedKanji(kanji[i])+kanjiPriority(kanji[i]))
 		}
 	}
 	return score
 }
 
-func kanjiFirst(kanji_entry jmdict.JmdictKanji) int {
+func kanjiFirst(kanji_entry jmdict.JmdictKanji) uint16 {
 	for _, expression := range kanji_entry.Expression {
 		if IsKanji(expression) {
 			return 2
@@ -112,9 +112,9 @@ func kanjiFirst(kanji_entry jmdict.JmdictKanji) int {
 	return 0
 }
 
-func limitedKanji(kanji_entry jmdict.JmdictKanji) int {
+func limitedKanji(kanji_entry jmdict.JmdictKanji) uint16 {
 	str := strings.Join(kanji_entry.Information, "")
-	value := 0
+	var value uint16 = 0
 	if str == "search-only kanji form" {
 		value = 1
 	} else if str == "rarely-used kanji form" {
@@ -123,8 +123,8 @@ func limitedKanji(kanji_entry jmdict.JmdictKanji) int {
 	return value
 }
 
-func kanjiPriority(kanji_entry jmdict.JmdictKanji) int {
-	value := 0
+func kanjiPriority(kanji_entry jmdict.JmdictKanji) uint16 {
+	var value uint16 = 0
 	length := len(kanji_entry.Priorities)
 	if length != 0 {
 		for i := 0; i < length; i++ {
@@ -141,8 +141,8 @@ func kanjiPriority(kanji_entry jmdict.JmdictKanji) int {
 	return value
 }
 
-func wordfreq(priority string) int {
-	value := 0
+func wordfreq(priority string) uint16 {
+	var value uint16 = 0
 	flag := 0
 	for _, char := range priority {
 		if char == 'n' && flag == 0 {
@@ -152,7 +152,7 @@ func wordfreq(priority string) int {
 			flag++
 			continue
 		} else if char >= 48 && char <= 57 && flag == 2 {
-			value = value*10 + (int(char) - 48)
+			value = value*10 + uint16(int(char)-48)
 		} else {
 			value = 0
 			break
@@ -161,21 +161,21 @@ func wordfreq(priority string) int {
 	return value
 }
 
-func checkContent(entry jmdict.JmdictEntry) int {
-	var score int
+func checkContent(entry jmdict.JmdictEntry) uint16 {
+	var score uint16
 	senses := len(entry.Sense)
 	for _, sense := range entry.Sense {
 		glossaries := len(sense.Glossary)
 		for _, gloss := range sense.Glossary {
-			score += senses * glossaries * len(gloss.Content)
+			score += uint16(senses * glossaries * len(gloss.Content))
 		}
 	}
 	return score / 10
 }
 
-func checkReadings(entry jmdict.JmdictEntry) int {
-	var score int
-	score += len(entry.Readings) * 5
+func checkReadings(entry jmdict.JmdictEntry) uint16 {
+	var score uint16
+	score += uint16(len(entry.Readings) * 5)
 	for _, reading := range entry.Readings {
 		if len(reading.Information) != 0 {
 			score += 2
@@ -233,13 +233,13 @@ func IsRareKanji(letter rune) bool {
 	return false
 }
 
-func engWrite(alphabet *EngAlphabet, entry jmdict.JmdictEntry, wordID, score int) {
+func engWrite(alphabet *EngAlphabet, entry jmdict.JmdictEntry, wordID int, score uint16) {
 	for i, sense := range entry.Sense {
 		for j, gloss := range sense.Glossary {
 			words := ParseWords(gloss.Content)
 			if len(words) != 0 {
 				for k, word := range words {
-					var hash int = (i+1)*10000 + (j+1)*100 + k
+					var hash uint16 = uint16((i+1)*2000 + (j+1)*100 + k)
 					writeEngWord(alphabet, word, wordID, score, hash)
 				}
 			}
@@ -247,15 +247,15 @@ func engWrite(alphabet *EngAlphabet, entry jmdict.JmdictEntry, wordID, score int
 	}
 }
 
-func kanaWrite(alphabet *KanaAlphabet, entry jmdict.JmdictEntry, wordID, score int) {
+func kanaWrite(alphabet *KanaAlphabet, entry jmdict.JmdictEntry, wordID int, score uint16) {
 	for index, reading := range entry.Readings {
-		writeKanaWord(alphabet, reading.Reading, wordID, score, index)
+		writeKanaWord(alphabet, reading.Reading, wordID, score, uint16(index))
 	}
 }
 
-func kanjiWrite(alphabet *KanjiAlphabet, entry jmdict.JmdictEntry, wordID, score int) {
+func kanjiWrite(alphabet *KanjiAlphabet, entry jmdict.JmdictEntry, wordID int, score uint16) {
 	for index, kanji := range entry.Kanji {
-		writeKanjiSymbol(alphabet, kanji.Expression, wordID, score, index)
+		writeKanjiSymbol(alphabet, kanji.Expression, wordID, score, uint16(index))
 	}
 }
 
@@ -266,14 +266,14 @@ func ParseWords(content string) []string {
 	return parsed_words
 }
 
-func writeEngWord(alphabet *EngAlphabet, word string, wordID, score, hash int) {
+func writeEngWord(alphabet *EngAlphabet, word string, wordID int, score, hash uint16) {
 	for position, letter := range word {
 		var char int = int(letter) - 97 // We make use of the ASCII representation to get the indash values of slices based on the letter, which helps us save some time
 		insertEngEntry(alphabet, char, position, wordID, score, hash)
 	}
 }
 
-func writeKanaWord(alphabet *KanaAlphabet, word string, wordID, score, index int) {
+func writeKanaWord(alphabet *KanaAlphabet, word string, wordID int, score, index uint16) {
 	for position, character := range word {
 		pos := position / 3
 		var char int
@@ -288,7 +288,7 @@ func writeKanaWord(alphabet *KanaAlphabet, word string, wordID, score, index int
 	}
 }
 
-func writeKanjiSymbol(alphabet *KanjiAlphabet, word string, wordID, score, index int) {
+func writeKanjiSymbol(alphabet *KanjiAlphabet, word string, wordID int, score, index uint16) {
 	for position, character := range word {
 		pos := position / 3
 		var char int
@@ -305,7 +305,7 @@ func writeKanjiSymbol(alphabet *KanjiAlphabet, word string, wordID, score, index
 
 // This is the main function that will be called during JMdict mapping for search.
 // It takes the rune of the letter and its position within the word, the word's indash in JMdict and the alphabet struct.
-func insertEngEntry(grid *EngAlphabet, char, position, wordID, score, hash int) {
+func insertEngEntry(grid *EngAlphabet, char, position, wordID int, score, hash uint16) {
 	length := len(grid.Alphabet[char].Positions) - 1 // We make sure that the slice for the letter has enough elements to at least match the position value
 	for position > length {                          // If it doesn't, we append more elements to the slice
 		grid.Alphabet[char].Positions = append(grid.Alphabet[char].Positions, Position{})
@@ -314,7 +314,7 @@ func insertEngEntry(grid *EngAlphabet, char, position, wordID, score, hash int) 
 	sortAndInsert(&grid.Alphabet[char].Positions[position], wordID, score, hash)
 }
 
-func insertKanaEntry(grid *KanaAlphabet, char, position, wordID, score, index int) {
+func insertKanaEntry(grid *KanaAlphabet, char, position, wordID int, score, index uint16) {
 	length := len(grid.Alphabet[char].Positions) - 1 // We make sure that the slice for the letter has enough elements to at least match the position value
 	for position > length {                          // If it doesn't, we append more elements to the slice
 		grid.Alphabet[char].Positions = append(grid.Alphabet[char].Positions, Position{})
@@ -323,7 +323,7 @@ func insertKanaEntry(grid *KanaAlphabet, char, position, wordID, score, index in
 	sortAndInsert(&grid.Alphabet[char].Positions[position], wordID, score, index)
 }
 
-func insertKanjiEntry(grid *KanjiAlphabet, char, position, wordID, score, index int) {
+func insertKanjiEntry(grid *KanjiAlphabet, char, position, wordID int, score, index uint16) {
 	length := len(grid.Alphabet[char].Positions) - 1
 	for position > length {
 		grid.Alphabet[char].Positions = append(grid.Alphabet[char].Positions, Position{})
@@ -333,7 +333,7 @@ func insertKanjiEntry(grid *KanjiAlphabet, char, position, wordID, score, index 
 }
 
 // This functions performs the sorting (if necessary) of the entry list and inserts the new element
-func sortAndInsert(position *Position, wordID, score, hash int) {
+func sortAndInsert(position *Position, wordID int, score, hash uint16) {
 	length := len(position.List)
 	var entry Entry
 	entry.WordID = wordID

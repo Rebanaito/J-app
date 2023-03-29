@@ -51,4 +51,29 @@ func main() {
 	time.Sleep(time.Second * 2)
 	screen.Clear()
 	screen.MoveTopLeft()
+	// s := binary.Size(env.English.Alphabet)
+	// fmt.Println(s)
+	// fmt.Println("Max WordID: ", len(env.Dict.Entries))
+	// var maxSense int = 0
+	// var maxGloss int = 0
+	// var maxWords int = 0
+	// for _, entry := range env.Dict.Entries {
+	// 	if len(entry.Sense) > maxSense {
+	// 		maxSense = len(entry.Sense)
+	// 	}
+	// 	for _, sense := range entry.Sense {
+	// 		if len(sense.Glossary) > maxGloss {
+	// 			maxGloss = len(sense.Glossary)
+	// 		}
+	// 		for _, gloss := range sense.Glossary {
+	// 			words := searchgrids.ParseWords(gloss.Content)
+	// 			if len(words) > maxWords {
+	// 				maxWords = len(words)
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// fmt.Println("Max sense: ", maxSense)
+	// fmt.Println("Max gloss: ", maxGloss)
+	// fmt.Println("Max words: ", maxWords)
 }
